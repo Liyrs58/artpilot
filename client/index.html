@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ArtPilot</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>ArtPilot</h1>
+            <div id="status" class="disconnected">disconnected</div>
+        </header>
+
+        <div id="layer-preview">
+            <button id="btn-refresh-layers">Refresh Layers</button>
+            <ul id="layer-list"></ul>
+        </div>
+
+        <div id="messages"></div>
+
+        <form id="chat-form">
+            <input type="text" id="chat-input" placeholder="e.g. 'Select the background layer and fill it blue'" autocomplete="off" />
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script src="CSInterface.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
