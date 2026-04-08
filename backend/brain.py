@@ -9,9 +9,17 @@ import re
 def _extract_layer(msg: str, layers: list[str] | None, active_layer: str | None) -> str:
     """Try to find a layer name in the message, fall back to active layer."""
     if layers:
+        # Check for exact layer name mentions (case-insensitive)
         for name in layers:
-            if name.lower() in msg:
+            # Require word boundary to avoid "layer" matching "Layer 3"
+            pattern = r'\b' + re.escape(name.lower()) + r'\b'
+            if re.search(pattern, msg):
                 return name
+
+        # "background" typically means the bottom layer
+        if "background" in msg:
+            return layers[-1]  # Last in list = bottom layer in Illustrator
+
     return active_layer or "Layer 1"
 
 
@@ -51,10 +59,18 @@ def parse_command(
     layer = _extract_layer(msg, layers, active_layer)
 
     # Order matters — check more specific patterns first
+    # Detect if this is a color/fill command (even if "background" is mentioned)
+    has_color_intent = any(w in msg for w in ["color", "fill", "paint", "change"])
+    has_color_word = any(w in msg for w in [
+        "red", "green", "blue", "yellow", "white", "black", "orange",
+        "purple", "pink", "cyan", "magenta", "gray", "grey", "#",
+    ])
+
     if "sticker" in msg:
         return {"tool": "sticker_pack", "layer": layer, "params": {}}
 
-    if "remove" in msg and "background" in msg:
+    # Only trigger remove_bg if NOT a color command
+    if "remove" in msg and "background" in msg and not (has_color_intent and has_color_word):
         return {"tool": "remove_bg", "layer": layer, "params": {}}
 
     if "segment" in msg or "extract" in msg:
@@ -69,7 +85,7 @@ def parse_command(
     if "trace" in msg or "svg" in msg or "vector" in msg:
         return {"tool": "trace", "layer": layer, "params": {}}
 
-    if ("color" in msg or "fill" in msg) and ("select" not in msg):
+    if (has_color_intent or has_color_word) and ("select" not in msg or has_color_word):
         color = _extract_color(msg)
         return {"tool": "fill", "layer": layer, "params": {"color": color}}
 

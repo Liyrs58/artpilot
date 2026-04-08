@@ -84,6 +84,33 @@ function fillSelection(hexColor) {
     return "Filled selection with #" + hex;
 }
 
+function fillLayer(name, hexColor) {
+    var doc = _doc();
+    var layer = _findLayer(name);
+    doc.activeLayer = layer;
+
+    var hex = hexColor.replace("#", "");
+    var r = parseInt(hex.substring(0, 2), 16);
+    var g = parseInt(hex.substring(2, 4), 16);
+    var b = parseInt(hex.substring(4, 6), 16);
+
+    var color = new RGBColor();
+    color.red = r;
+    color.green = g;
+    color.blue = b;
+
+    var count = 0;
+    for (var i = 0; i < layer.pageItems.length; i++) {
+        var item = layer.pageItems[i];
+        if (item.fillColor !== undefined) {
+            item.fillColor = color;
+            count++;
+        }
+    }
+    if (count === 0) throw new Error("No fillable items on layer: " + name);
+    return "Filled " + count + " items on " + name + " with #" + hex;
+}
+
 function flipLayer(name, axis) {
     var layer = _findLayer(name);
     _doc().activeLayer = layer;
