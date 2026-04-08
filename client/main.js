@@ -1,7 +1,7 @@
 /* ArtPilot – CEP panel client */
 
 var cs = new CSInterface();
-var BACKEND = "http://localhost:8000";
+var BACKEND = "http://127.0.0.1:8000";
 var messagesEl = document.getElementById("messages");
 var chatForm = document.getElementById("chat-form");
 var chatInput = document.getElementById("chat-input");
