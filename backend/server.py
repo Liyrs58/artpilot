@@ -45,6 +45,7 @@ class ChatRequest(BaseModel):
     message: str
     layers: list[str] | None = None
     active_layer: str | None = None
+    doc_info: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -69,11 +70,20 @@ def health():
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
-    action = parse_command(req.message, req.layers, req.active_layer)
+    action = parse_command(req.message, req.layers, req.active_layer, req.doc_info)
     tool = action["tool"]
     layer = action["layer"]
     params = action["params"]
     input_path = _layer_png(layer)
+
+    # ── LLM-generated script (bypass all other tools) ─────
+
+    if tool == "llm_script":
+        script = params.get("script", "")
+        return ChatResponse(
+            reply="Running AI-generated command...",
+            script=script,
+        )
 
     # ── ExtendScript-only tools (no image processing) ─────
 

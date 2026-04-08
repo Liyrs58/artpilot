@@ -29,7 +29,7 @@ function setStatus(connected) {
 function xhrRequest(method, url, data, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open(method, url, true);
-    xhr.timeout = 5000;
+    xhr.timeout = 60000;
     if (data) {
         xhr.setRequestHeader("Content-Type", "application/json");
     }
@@ -92,18 +92,21 @@ function runExtendScript(code) {
     });
 }
 
-// ── Gather layer context ─────────────────────────────────
+// ── Gather full document context ─────────────────────────
 
-function getLayerContext(callback) {
+function getDocContext(callback) {
     cs.evalScript("getLayerNames()", function (namesRaw) {
         var layers = [];
         if (namesRaw && namesRaw !== "EvalScript error.") {
             layers = namesRaw.split(",");
         }
-        // Active layer name via inline ExtendScript
         cs.evalScript("app.activeDocument.activeLayer.name", function (active) {
             var activeLayer = (active && active !== "EvalScript error.") ? active : null;
-            callback(layers, activeLayer);
+            // Get full document structure for LLM
+            cs.evalScript("describeDocument()", function (docInfo) {
+                var info = (docInfo && docInfo !== "EvalScript error.") ? docInfo : null;
+                callback(layers, activeLayer, info);
+            });
         });
     });
 }
@@ -118,11 +121,12 @@ chatForm.addEventListener("submit", function (e) {
     addMessage(text, "user");
     chatInput.value = "";
 
-    getLayerContext(function (layers, activeLayer) {
+    getDocContext(function (layers, activeLayer, docInfo) {
         xhrRequest("POST", BACKEND + "/chat", {
             message: text,
             layers: layers,
-            active_layer: activeLayer
+            active_layer: activeLayer,
+            doc_info: docInfo
         }, function (err, data) {
             if (err) {
                 addMessage("Error: " + err.message, "error");

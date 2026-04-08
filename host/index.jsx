@@ -196,6 +196,43 @@ function exportAllLayersAsPNG(path) {
     return "Exported: " + exported.join(", ");
 }
 
+// ── Describe document structure for LLM context ─────────
+
+function describeDocument() {
+    var doc = _doc();
+    var info = [];
+    info.push("Document: " + doc.name + " (" + doc.width + "x" + doc.height + ")");
+    for (var i = 0; i < doc.layers.length; i++) {
+        var layer = doc.layers[i];
+        var layerInfo = "Layer '" + layer.name + "' (" + (layer.visible ? "visible" : "hidden") + "):";
+        var items = [];
+        for (var j = 0; j < layer.pageItems.length; j++) {
+            var item = layer.pageItems[j];
+            var desc = "  [" + j + "] " + item.typename;
+            if (item.name && item.name !== "") desc += " name='" + item.name + "'";
+            desc += " pos=(" + Math.round(item.left) + "," + Math.round(item.top) + ")";
+            desc += " size=(" + Math.round(item.width) + "x" + Math.round(item.height) + ")";
+            if (item.typename === "PathItem" || item.typename === "CompoundPathItem") {
+                if (item.fillColor && item.fillColor.typename === "RGBColor") {
+                    desc += " fill=rgb(" + item.fillColor.red + "," + item.fillColor.green + "," + item.fillColor.blue + ")";
+                }
+                if (item.strokeColor && item.strokeColor.typename === "RGBColor") {
+                    desc += " stroke=rgb(" + item.strokeColor.red + "," + item.strokeColor.green + "," + item.strokeColor.blue + ")";
+                }
+            }
+            if (item.typename === "GroupItem") {
+                desc += " children=" + item.pageItems.length;
+            }
+            items.push(desc);
+        }
+        info.push(layerInfo);
+        for (var k = 0; k < items.length; k++) {
+            info.push(items[k]);
+        }
+    }
+    return info.join("\n");
+}
+
 // ── Place ────────────────────────────────────────────────
 
 function placePNG(path, layerName) {
