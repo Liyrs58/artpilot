@@ -99,15 +99,43 @@ function fillLayer(name, hexColor) {
     color.green = g;
     color.blue = b;
 
+    // If user already has a selection, fill only that
+    var sel = doc.selection;
+    if (sel && sel.length > 0) {
+        var sc = 0;
+        for (var s = 0; s < sel.length; s++) {
+            if (sel[s].fillColor !== undefined) {
+                sel[s].fillColor = color;
+                sc++;
+            }
+        }
+        if (sc > 0) return "Filled " + sc + " selected items with #" + hex;
+    }
+
+    // Otherwise fill all vector items on the layer
     var count = 0;
-    for (var i = 0; i < layer.pageItems.length; i++) {
-        var item = layer.pageItems[i];
-        if (item.fillColor !== undefined) {
-            item.fillColor = color;
-            count++;
+    function _fillItems(items) {
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            // Recurse into groups
+            if (item.typename === "GroupItem") {
+                _fillItems(item.pageItems);
+            } else if (item.typename === "CompoundPathItem" && item.pathItems.length > 0) {
+                for (var p = 0; p < item.pathItems.length; p++) {
+                    item.pathItems[p].fillColor = color;
+                    count++;
+                }
+            } else if (item.fillColor !== undefined && item.typename !== "PlacedItem" && item.typename !== "RasterItem") {
+                item.fillColor = color;
+                count++;
+            }
         }
     }
-    if (count === 0) throw new Error("No fillable items on layer: " + name);
+    _fillItems(layer.pageItems);
+
+    if (count === 0) {
+        return "No vector items to fill on " + name + ". This layer may contain raster images — try selecting specific paths first.";
+    }
     return "Filled " + count + " items on " + name + " with #" + hex;
 }
 

@@ -85,7 +85,7 @@ def parse_command(
     if "trace" in msg or "svg" in msg or "vector" in msg:
         return {"tool": "trace", "layer": layer, "params": {}}
 
-    if (has_color_intent or has_color_word) and ("select" not in msg or has_color_word):
+    if has_color_intent or has_color_word:
         color = _extract_color(msg)
         return {"tool": "fill", "layer": layer, "params": {"color": color}}
 
@@ -110,5 +110,10 @@ def parse_command(
 
     if "list" in msg or "layers" in msg:
         return {"tool": "list_layers", "layer": layer, "params": {}}
+
+    # Fallback: if any color-like word is present, treat as fill
+    if has_color_word:
+        color = _extract_color(msg)
+        return {"tool": "fill", "layer": layer, "params": {"color": color}}
 
     return {"tool": "unknown", "layer": layer, "params": {}, "raw": message}

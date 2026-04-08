@@ -105,7 +105,7 @@ def chat(req: ChatRequest):
     if tool == "fill":
         color = params.get("color", "#FF0000")
         return ChatResponse(
-            reply=f"Filling '{layer}' with {color}.",
+            reply=f"Filling '{layer}' with {color}. Tip: select specific items first for partial fills.",
             script=f"fillLayer('{_esc(layer)}', '{color}')",
         )
 
