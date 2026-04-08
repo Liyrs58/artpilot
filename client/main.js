@@ -24,12 +24,39 @@ function setStatus(connected) {
     statusEl.className = connected ? "connected" : "disconnected";
 }
 
+// ── XHR wrapper (avoids CORS/fetch issues with file:// origin) ──
+
+function xhrRequest(method, url, data, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open(method, url, true);
+    xhr.timeout = 5000;
+    if (data) {
+        xhr.setRequestHeader("Content-Type", "application/json");
+    }
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    callback(null, JSON.parse(xhr.responseText));
+                } catch (e) {
+                    callback(null, xhr.responseText);
+                }
+            } else {
+                callback(new Error("HTTP " + xhr.status));
+            }
+        }
+    };
+    xhr.onerror = function () { callback(new Error("Network error")); };
+    xhr.ontimeout = function () { callback(new Error("Timeout")); };
+    xhr.send(data ? JSON.stringify(data) : null);
+}
+
 // ── Health check ─────────────────────────────────────────
 
 function checkBackend() {
-    fetch(BACKEND + "/health")
-        .then(function () { setStatus(true); })
-        .catch(function () { setStatus(false); });
+    xhrRequest("GET", BACKEND + "/health", null, function (err) {
+        setStatus(!err);
+    });
 }
 checkBackend();
 setInterval(checkBackend, 5000);
@@ -92,30 +119,27 @@ chatForm.addEventListener("submit", function (e) {
     chatInput.value = "";
 
     getLayerContext(function (layers, activeLayer) {
-        fetch(BACKEND + "/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                message: text,
-                layers: layers,
-                active_layer: activeLayer
-            })
-        })
-        .then(function (res) { return res.json(); })
-        .then(function (data) {
+        xhrRequest("POST", BACKEND + "/chat", {
+            message: text,
+            layers: layers,
+            active_layer: activeLayer
+        }, function (err, data) {
+            if (err) {
+                addMessage("Error: " + err.message, "error");
+                return;
+            }
             if (data.reply) {
                 addMessage(data.reply, "assistant");
             }
             if (data.script) {
-                return runExtendScript(data.script).then(function (result) {
+                runExtendScript(data.script).then(function (result) {
                     if (result && result !== "undefined") {
                         addMessage("Result: " + result, "assistant");
                     }
+                }).catch(function (e) {
+                    addMessage("Script error: " + e.message, "error");
                 });
             }
-        })
-        .catch(function (err) {
-            addMessage("Error: " + err.message, "error");
         });
     });
 });

@@ -17,7 +17,7 @@
             <Locale Code="All" />
         </LocaleList>
         <RequiredRuntimeList>
-            <RequiredRuntime Name="CSXS" Version="12.0" />
+            <RequiredRuntime Name="CSXS" Version="9.0" />
         </RequiredRuntimeList>
     </ExecutionEnvironment>
 
@@ -45,6 +45,8 @@
                     <Parameter>--allow-running-insecure-content</Parameter>
                     <Parameter>--disable-web-security</Parameter>
                     <Parameter>--allow-file-access-from-files</Parameter>
+                    <Parameter>--disable-site-isolation-trials</Parameter>
+                    <Parameter>--allow-file-access</Parameter>
                 </CEFCommandLine>
             </DispatchInfo>
         </Extension>
